@@ -1,0 +1,30 @@
+{
+  "name": "light-swift",
+  "description": "Openstack Swift API implementation in Node.js",
+  "version": "0.1.0",
+  "author": "Luka Zakrajsek <luka@koofr.net>",
+  "keywords": [
+    "openstack",
+    "swift"
+  ],
+  "homepage": "https://github.com/bancek/light-swift",
+  "bugs": "https://github.com/bancek/light-swift/issues",
+  "repository": "git://github.com/bancek/light-swift",
+  "licenses": [{
+    "type": "MIT"
+  }],
+  "main": "index",
+  "bin": {
+    "light-swift": "./bin/light-swift"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "express": "*",
+    "lodash": "*",
+    "optimist": "*",
+    "mime": "*"
+  }
+}
