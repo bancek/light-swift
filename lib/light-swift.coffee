@@ -399,12 +399,12 @@ class LightSwift
       if marker?
         objsMeta = []
 
-      if objsMeta.length == 0
-        return res.send(204)
-
       if req.json
         res.json objsMeta
       else
+        if objsMeta.length == 0
+          res.statusCode = 204
+
         res.lines _.map(objsMeta, (x) -> x.name or x.subdir)
 
     app.put '/v1/AUTH_:account/:container', common, (req, res) =>
