@@ -17,6 +17,11 @@ Usage help:
 
     $ light-swift --help
 
+## Test coverage
+
+    $ coffeeCoverage src lib # in light-swift
+    $ mocha --compilers coffee:coffee-script --ignore-leaks --reporter html-cov > coverage.html # in swift-client
+
 ## Authors
 
 Crafted by highly motivated engineers at [Koofr](http://koofr.net) and, hopefully, making your day just a little bit better.

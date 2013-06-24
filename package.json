@@ -10,10 +10,12 @@
   "homepage": "https://github.com/bancek/light-swift",
   "bugs": "https://github.com/bancek/light-swift/issues",
   "repository": "git://github.com/bancek/light-swift",
-  "licenses": [{
-    "type": "MIT"
-  }],
-  "main": "index",
+  "licenses": [
+    {
+      "type": "MIT"
+    }
+  ],
+  "main": "lib/light-swift",
   "bin": {
     "light-swift": "./bin/light-swift"
   },
@@ -21,10 +23,25 @@
     "node": "*"
   },
   "dependencies": {
-    "coffee-script": "*",
     "express": "*",
     "lodash": "*",
     "optimist": "*",
-    "mime": "*"
+    "mime": "*",
+    "q": "*",
+    "mongodb": "~1.3.6"
+  },
+  "devDependencies": {
+    "coffee-script": "~1.6.3",
+    "mocha": "~1.8.2",
+    "mocha-as-promised": "~1.3.0",
+    "chai": "~1.5.0",
+    "rimraf": "~2.1.4",
+    "request": "~2.21.0",
+    "file": "~0.2.1"
+  },
+  "scripts": {
+    "pretest": "cake build",
+    "prepublish": "cake build",
+    "test": "cake test"
   }
 }
