@@ -1,12 +1,17 @@
+os = require('os')
+fs = require('fs')
+nodePath = require('path')
 q = require('q')
 _ = require('lodash')
 should = require('chai').should()
 require('mocha-as-promised')()
+rimraf = require('rimraf')
 
 mongodb = require('mongodb')
 
 MemoryBackend = require('../src/backend/memory')
 MongoBackend = require('../src/backend/mongo')
+FilesystemBackend = require('../src/backend/filesystem')
 
 [
   ['MemoryBackend', (-> q([new MemoryBackend(), (-> q())]))]
@@ -31,6 +36,20 @@ MongoBackend = require('../src/backend/mongo')
 
       backend.connect().then ->
         [backend, (-> backend.close().then(cleanup))]
+  )]
+  ['FilesystemBackend', (->
+    path = nodePath.join(os.tmpDir(), 'FilesystemBackend/')
+
+    cleanup = ->
+      rimraf.sync(path)
+      q()
+
+    try cleanup()
+
+    backend = new FilesystemBackend(path)
+
+    backend.connect().then ->
+      [backend, cleanup]
   )]
 ].forEach ([name, getBackend]) ->
   describe name, ->
