@@ -51,6 +51,11 @@ opts = require('optimist')
   .default('b', 'memory')
   .string('b')
 
+  .describe('t', 'Backend options')
+  .alias('t', 'backendopts')
+  .default('t', '[]')
+  .string('t')
+
   .describe('s', 'Storage')
   .alias('s', 'storage')
   .default('s', 'memory')
@@ -72,13 +77,16 @@ LightSwift = require './light-swift'
 Backend = require('./backend/' + argv.backend)
 Storage = require('./storage/' + argv.storage)
 
-Storage = Storage.bind.apply(Storage, JSON.parse(argv.storageopts))
+create = (cls, args) ->
+  args.unshift(null)
+  factory = cls.bind.apply(cls, args)
+  new factory()
 
 options =
   port: argv.port
   verbose: argv.verbose
-  storage: new Storage()
-  backend: new Backend()
+  storage: create(Storage, JSON.parse(argv.storageopts))
+  backend: create(Backend, JSON.parse(argv.backendopts))
 
 swift = new LightSwift(options)
 
@@ -89,5 +97,5 @@ swift.connect()
     swift.addContainer(argv.account, argv.container) if argv.container
   )
   .then(-> swift.server())
-  .then(-> console.log("Light Swift server started on 0.0.0.0:#{options.port}"))
+  .then(-> console.log("Light Swift server started on 0.0.0.0:#{options.port} using #{argv.backend} backend and #{argv.storage} storage"))
   .fail((err) -> console.error(err))
