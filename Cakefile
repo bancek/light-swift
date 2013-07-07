@@ -26,4 +26,4 @@ task 'coverage', 'Build cov-lib from src', (callback) ->
       callback?()
 
 task 'test', 'Run Mocha tests', (callback) ->
-    spawn 'mocha', ['--compilers', 'coffee:coffee-script', '--recursive', 'test'], stdio: 'inherit'
+  spawn 'mocha', ['--compilers', 'coffee:coffee-script', '--recursive', 'test'], stdio: 'inherit'
