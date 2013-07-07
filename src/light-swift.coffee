@@ -132,7 +132,7 @@ class LightSwift
 
   # objects
 
-  createObject: (account, container, obj, stream) =>
+  createObject: (account, container, object, obj, stream) =>
     hasher = new Hasher()
     stream = stream.pipe(hasher)
 
@@ -147,20 +147,18 @@ class LightSwift
       obj.object = res.object
       obj.contentLength = res.size
 
-      @addObject(account, container, obj)
+      @addObject(account, container, object, obj)
 
-  addObject: (account, container, obj) =>
-    deleted = @getObject(account, container, obj.name).then(=>
-      @deleteObject(account, container, obj.name)
-    ).fail(->)
+  addObject: (account, container, object, obj) =>
+    deleted = @deleteObject(account, container, object).fail(->)
 
     deleted.then =>
       obj.metadata = {} if not obj.metadata?
-      obj.contentType = mime.lookup(obj.name) if not obj.contentType?
+      obj.contentType = mime.lookup(object) if not obj.contentType?
       obj.lastModified = new Date() if not obj.lastModified?
       obj.hash = random32() if not obj.hash?
 
-      @backend.addObject(account, container, obj).then =>
+      @backend.addObject(account, container, object, obj).then =>
         @backend.accountAddObject(account, obj.contentLength)
           .then(@backend.containerAddObject(account, container, obj.contentLength))
           .then(@bumpAccount(account))
@@ -170,8 +168,8 @@ class LightSwift
   bumpObject: (account, container, object) =>
     @backend.setObjectLastModified(account, container, object, new Date())
 
-  deleteObject: (account, container, obj) =>
-    @backend.deleteObject(account, container, obj).then (obj) =>
+  deleteObject: (account, container, object) =>
+    @backend.deleteObject(account, container, object).then (obj) =>
       @storage.remove(obj.object).then =>
         @backend.accountDeleteObject(account, obj.contentLength)
           .then(@backend.containerDeleteObject(account, container, obj.contentLength))
@@ -181,9 +179,9 @@ class LightSwift
   objectStream: (obj) =>
     @storage.get(obj.object)
 
-  copyObject: (account, container, obj) =>
+  copyObject: (account, container, object, obj) =>
     @objectStream(obj).then (stream) =>
-      @createObject(account, container, obj, stream)
+      @createObject(account, container, object, obj, stream)
 
   getObject: (account, container, object) =>
     @backend.getObject(account, container, object)
@@ -203,7 +201,9 @@ class LightSwift
     allCreated = objects.map (obj) =>
       stream = dataStream(obj.content)
       delete obj.content
-      @createObject(account, container, obj, stream)
+      name = obj.name
+      delete obj.name
+      @createObject(account, container, name, obj, stream)
 
     q.all(allCreated)
 

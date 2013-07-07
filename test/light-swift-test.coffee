@@ -55,7 +55,6 @@ describe 'Light Swift', ->
 
               objects.should.eql
                 'file.txt':
-                  name: 'file.txt'
                   contentType: 'text/plain'
                   lastModified: new Date('2013-04-22T16:58:36.698Z')
                   hash: '827ccb0eea8a706c4c34a16891f84e7b'
@@ -63,7 +62,6 @@ describe 'Light Swift', ->
                   metadata: {}
 
                 'dir1/file1.txt':
-                  name: 'dir1/file1.txt'
                   contentType: 'text/plain'
                   lastModified: new Date('2013-04-22T16:58:36.698Z')
                   hash: 'a09ebcef8ab11daef0e33e4394ea775f'
@@ -71,7 +69,6 @@ describe 'Light Swift', ->
                   metadata: {}
 
                 'dir1/file2.txt':
-                  name: 'dir1/file2.txt'
                   contentType: 'text/plain'
                   lastModified: new Date('2013-04-22T16:58:36.698Z')
                   hash: '725d747aeea47a4d8f6432ef5a9ee268'

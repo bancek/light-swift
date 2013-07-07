@@ -9,7 +9,7 @@ MemoryBackend = require('../src/backend/memory')
 MongoBackend = require('../src/backend/mongo')
 
 [
-  ['MemoryBackend', (-> q([new MemoryBackend(), (-> q())]))],
+  ['MemoryBackend', (-> q([new MemoryBackend(), (-> q())]))]
   ['MongoBackend', (->
     url = 'mongodb://localhost/lightswifttest'
 
@@ -52,7 +52,7 @@ MongoBackend = require('../src/backend/mongo')
     key = 'testing'
     container = 'test-container'
     authToken = 'AUTH_tk08b15ec1692f5a3200f506fec5ea616f'
-    object = 'file1'
+    object = 'dir1/file1'
 
     accountInfo =
       bytesUsed: 0
@@ -71,11 +71,11 @@ MongoBackend = require('../src/backend/mongo')
         write: null
 
     objectInfo =
-      name: 'file1'
+      object: 'OBJID'
       metadata: {}
       contentType: 'text/plain'
       contentLength: 1024
-      lastModified: Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)')
+      lastModified: new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))
       hash: '08b15ec1692f5a3200f506fec5ea616f'
 
     describe 'account', ->
@@ -87,7 +87,7 @@ MongoBackend = require('../src/backend/mongo')
             a.should.eql accountInfo
 
       it 'should setAccountLastModified', ->
-        date = Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)')
+        date = new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))
 
         backend.addAccount(account, _.cloneDeep(accountInfo)).then ->
           backend.setAccountLastModified(account, date).then ->
@@ -186,7 +186,7 @@ MongoBackend = require('../src/backend/mongo')
               should.not.exist c
 
       it 'should setContainerLastModified', ->
-        date = Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)')
+        date = new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))
 
         backend.addContainer(account, container, _.cloneDeep(containerInfo)).then ->
           backend.setContainerLastModified(account, container, date).then ->
@@ -249,38 +249,38 @@ MongoBackend = require('../src/backend/mongo')
           .then(-> done())
 
       it 'should addObject', ->
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.getObject(account, container, object).then (o) ->
            o.should.eql objectInfo
 
       it 'should setObjectLastModified', ->
-        date = Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)')
+        date = new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))
 
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.setObjectLastModified(account, container, object, date).then ->
             backend.getObject(account, container, object).then (o) ->
              o.lastModified.should.eql date
 
       it 'should deleteObject', ->
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.deleteObject(account, container, object).then ->
             backend.getObject(account, container, object).then (o) ->
               should.not.exist o
 
       it 'should getObject', ->
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.getObject(account, container, object).then (o) ->
            o.should.eql objectInfo
 
       it 'should getObjects', ->
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.getObjects(account, container).then (os) ->
             os.should.eql _.object([[object, objectInfo]])
 
       it 'should setObjectMetadata', ->
         metadata = foo: 'bar'
 
-        backend.addObject(account, container, _.cloneDeep(objectInfo)).then ->
+        backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.setObjectMetadata(account, container, object, _.cloneDeep(metadata)).then ->
             backend.getObject(account, container, object).then (o) ->
              o.metadata.should.eql metadata

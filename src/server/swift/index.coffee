@@ -284,7 +284,6 @@ class SwiftServer
             return res.send 404
 
           obj = _.cloneDeep(obj)
-          obj.name = req.object
 
           if req.get('content-type')
             obj.contentType = req.get('content-type')
@@ -295,12 +294,11 @@ class SwiftServer
           if _.keys(metadata).length
             obj.metadata = metadata
 
-          swift.copyObject(req.account, req.container, obj).then (obj) ->
+          swift.copyObject(req.account, req.container, req.object, obj).then (obj) ->
             res.set 'Etag', obj.hash
             res.send 201
 
       obj =
-        name: req.object
         contentType: req.get('content-type')
         objectManifest: req.get('x-object-manifest')
         hash: req.get('etag')
@@ -311,7 +309,7 @@ class SwiftServer
       if obj.objectManifest and obj.hash and obj.hash != MD5_EMPTY
         return res.send(503)
 
-      swift.createObject(req.account, req.container, obj, req).then((obj) ->
+      swift.createObject(req.account, req.container, req.object, obj, req).then((obj) ->
         res.set 'Etag', obj.hash
         res.send 201
       ).fail((err) ->
@@ -338,7 +336,6 @@ class SwiftServer
           metadata = serverUtils.extractMetadata(req.headers)
 
           obj = _.cloneDeep(obj)
-          obj.name = copyInfo.object
 
           if req.get('content-type')
             obj.contentType = req.get('content-type')
@@ -349,7 +346,7 @@ class SwiftServer
           if _.keys(metadata).length
             obj.metadata = metadata
 
-          swift.copyObject(req.account, copyInfo.container, obj).then ->
+          swift.copyObject(req.account, copyInfo.container, copyInfo.object, obj).then ->
             res.send 201
 
     app.post '/v1/AUTH_:account/:container/*', common, (req, res) ->

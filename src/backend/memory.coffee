@@ -118,8 +118,8 @@ class MemoryBackend
 
   # objects
 
-  addObject: (account, container, obj) =>
-    @objectsStore[account][container][obj.name] = obj
+  addObject: (account, container, object, obj) =>
+    @objectsStore[account][container][object] = obj
     q()
 
   setObjectLastModified: (account, container, object, lastModified) =>

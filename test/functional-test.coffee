@@ -186,7 +186,9 @@ describe 'Swift API', ->
     auth()
 
     checkJson = ([res, body]) ->
-      res.headers['content-type'].toLowerCase().should.equal 'application/json; charset=utf-8'
+      ct = res.headers['content-type'].toLowerCase()
+      ct = ct.split(';')[0]
+      ct.should.equal 'application/json'
 
     it 'should be JSON format=json', (done) ->
       GET('/?format=json').then(checkJson)

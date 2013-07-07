@@ -162,8 +162,8 @@ class MongoBackend
 
   # objects
 
-  addObject: (account, container, obj) =>
-    obj._id = a: account, c: container, o: obj.name
+  addObject: (account, container, object, obj) =>
+    obj._id = a: account, c: container, o: object
     q.ninvoke(@objects, 'save', obj)
 
   setObjectLastModified: (account, container, object, lastModified) =>
