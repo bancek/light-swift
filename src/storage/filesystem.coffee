@@ -16,7 +16,17 @@ class FilesystemStorage
     filename = @getPath(object)
 
     q.nfcall(fs.stat, filename).then ->
-      fs.createReadStream filename
+      defer = q.defer()
+
+      stream = fs.createReadStream(filename)
+
+      stream.on 'open', ->
+        defer.resolve(stream)
+
+      stream.on 'error', (err) ->
+        defer.reject(err)
+
+      defer.promise
 
   create: (stream) =>
     defer = q.defer()
