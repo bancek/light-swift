@@ -65,29 +65,32 @@ class FilesystemBackend
       func().fin ->
         q.nfcall(lockFile.unlock, fileName)
 
-  touch: (path, mtime) =>
-    q.nfcall(fs.utimes, path, mtime, mtime)
-
-  xattrGetInt: (path, name, dest) =>
-    xattr.get(path, 'user.' + name).then (data) ->
-      dest[name] = data - 0
-
-  xattrSetInt: (path, name, src) =>
-    xattr.set(path, 'user.' + name, '' + src[name])
-
-  xattrIncrInt: (path, name, amount) =>
-    key = 'user.' + name
-
-    @lock path, =>
-      xattr.get(path, key).then (data) =>
-        xattr.set(path, key, '' + ((data - 0) + amount))
-
   xattrGetStr: (path, name, dest) =>
     xattr.get(path, 'user.' + name).then (data) ->
       dest[name] = data
 
   xattrSetStr: (path, name, src) =>
     xattr.set(path, 'user.' + name, src[name])
+
+  xattrGetJson: (path, name) =>
+    xattr.get(path, 'user.' + name).then (data) =>
+      JSON.parse(data)
+
+  xattrSetJson: (path, name, data) =>
+    xattr.set(path, 'user.' + name, JSON.stringify(data))
+
+  getMeta: (path) =>
+    @xattrGetJson(path, 'meta')
+
+  setMeta: (path, data) =>
+    @lock path, =>
+      @xattrSetJson(path, 'meta', data)
+
+  updateMeta: (path, mutator) =>
+    @lock path, =>
+      @xattrGetJson(path, 'meta').then (data) =>
+        mutator(data)
+        @xattrSetJson(path, 'meta', data)
 
   # accounts
 
@@ -103,70 +106,57 @@ class FilesystemBackend
 
     ensureDir(path).then =>
       ensureDir(authPath).then =>
-        q.all([
-          @xattrSetInt(path, 'bytesUsed', accountInfo)
-          @xattrSetInt(path, 'containerCount', accountInfo)
-          @xattrSetInt(path, 'objectCount', accountInfo)
-          @setAccountLastModified(account, accountInfo.lastModified)
-        ])
+        @setMeta path,
+          bytesUsed: accountInfo.bytesUsed
+          containerCount: accountInfo.containerCount
+          objectCount: accountInfo.objectCount
+          lastModified: accountInfo.lastModified.getTime()
+          metadata: {}
 
   setAccountLastModified: (account, lastModified) =>
     path = @accountPath(account)
-    @xattrSetInt(path, 'lastModified', lastModified: lastModified.getTime())
+
+    @updateMeta path, (data) ->
+      data.lastModified = lastModified.getTime()
 
   getAccount: (account) =>
     path = @accountPath(account)
 
-    info =
-      metadata: {}
-
-    q.all([
-      @xattrGetInt(path, 'lastModified', info).then(-> info.lastModified = new Date(info.lastModified))
-      @xattrGetInt(path, 'bytesUsed', info)
-      @xattrGetInt(path, 'containerCount', info)
-      @xattrGetInt(path, 'objectCount', info)
-      xattr.list(path).then((attrs) =>
-        mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-
-        promises = mattrs.map (attr) =>
-          xattr.get(path, attr).then (val) ->
-            key = attr.replace(/^user\.meta\./, '')
-            info.metadata[key] = val
-
-        q.all(promises)
-      )
-    ]).then =>
-      info
+    @getMeta(path).then (data) =>
+      data.lastModified = new Date(data.lastModified)
+      data
 
   setAccountMetadata: (account, metadata) =>
     path = @accountPath(account)
 
-    xattr.list(path).then((attrs) =>
-      mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-      q.all(mattrs.map (attr) => xattr.remove(path, attr))
-    ).then(=>
-      q.all(_.keys(metadata).map((key) => xattr.set(path, 'user.meta.' + key, metadata[key])))
-    )
+    @updateMeta path, (data) ->
+      data.metadata = metadata
 
   accountAddContainer: (account) =>
     path = @accountPath(account)
-    @xattrIncrInt(path, 'containerCount', 1)
+
+    @updateMeta path, (data) ->
+      data.containerCount += 1
 
   accountDeleteContainer: (account) =>
     path = @accountPath(account)
-    @xattrIncrInt(path, 'containerCount', -1)
+
+    @updateMeta path, (data) ->
+      data.containerCount -= 1
 
   accountAddObject: (account, size) =>
     path = @accountPath(account)
 
-    @xattrIncrInt(path, 'objectCount', 1).then =>
-      @xattrIncrInt(path, 'bytesUsed', size)
+    @updateMeta path, (data) ->
+      data.objectCount += 1
+      data.bytesUsed += size
 
   accountDeleteObject: (account, size) =>
     path = @accountPath(account)
 
-    @xattrIncrInt(path, 'objectCount', -1).then =>
-      @xattrIncrInt(path, 'bytesUsed', -size)
+    @updateMeta path, (data) ->
+      data.objectCount -= 1
+      data.bytesUsed -= size
 
   # auth
 
@@ -223,12 +213,14 @@ class FilesystemBackend
     path = @containerPath(account, container)
 
     ensureDir(path).then =>
-      q.all([
-        @xattrSetInt(path, 'bytesUsed', containerInfo)
-        @xattrSetInt(path, 'objectCount', containerInfo)
-        @setContainerLastModified(account, container, containerInfo.lastModified)
-        @setContainerMetadata(account, container, containerInfo.metadata)
-      ])
+      @setMeta path,
+        bytesUsed: containerInfo.bytesUsed
+        objectCount: containerInfo.objectCount
+        lastModified: containerInfo.lastModified.getTime()
+        metadata: containerInfo.metadata
+        acl:
+          read: null
+          write: null
 
   deleteContainer: (account, container) =>
     path = @containerPath(account, container)
@@ -238,40 +230,16 @@ class FilesystemBackend
   setContainerLastModified: (account, container, lastModified) =>
     path = @containerPath(account, container)
 
-    @xattrSetInt(path, 'lastModified', lastModified: lastModified.getTime())
+    @updateMeta path, (data) ->
+      data.lastModified = lastModified.getTime()
 
   getContainer: (account, container) =>
     path = @containerPath(account, container)
 
-    info =
-      metadata: {}
-      acl:
-        read: null
-        write: null
-
     q.nfcall(fs.stat, path).then(=>
-      q.all([
-        @xattrGetInt(path, 'lastModified', info).then(-> info.lastModified = new Date(info.lastModified))
-        @xattrGetInt(path, 'bytesUsed', info)
-        @xattrGetInt(path, 'objectCount', info)
-        xattr.list(path).then((attrs) =>
-          mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-
-          promises = mattrs.map (attr) =>
-            xattr.get(path, attr).then (val) ->
-              key = attr.replace(/^user\.meta\./, '')
-              info.metadata[key] = val
-
-          q.all(promises)
-        )
-        xattr.get(path, 'user.acl.read').fail(->).then((val) =>
-          info.acl.read = val or null
-        )
-        xattr.get(path, 'user.acl.write').fail(->).then((val) =>
-          info.acl.write = val or null
-        )
-      ]).then =>
-        info
+      @getMeta(path).then (data) =>
+        data.lastModified = new Date(data.lastModified)
+        data
     , (err) =>
       null
     )
@@ -286,32 +254,28 @@ class FilesystemBackend
   setContainerMetadata: (account, container, metadata) =>
     path = @containerPath(account, container)
 
-    xattr.list(path).then((attrs) =>
-      mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-      q.all(mattrs.map (attr) => xattr.remove(path, attr))
-    ).then(=>
-      q.all(_.keys(metadata).map((key) => xattr.set(path, 'user.meta.' + key, metadata[key])))
-    )
+    @updateMeta path, (data) ->
+      data.metadata = metadata
 
   setContainerAcl: (account, container, acl) =>
     path = @containerPath(account, container)
 
-    q.all([
-      xattr.set(path, 'user.acl.read', acl.read or '')
-      xattr.set(path, 'user.acl.write', acl.write or '')
-    ])
+    @updateMeta path, (data) ->
+      data.acl = acl
 
   containerAddObject: (account, container, size) =>
     path = @containerPath(account, container)
 
-    @xattrIncrInt(path, 'objectCount', 1).then =>
-      @xattrIncrInt(path, 'bytesUsed', size)
+    @updateMeta path, (data) ->
+      data.objectCount += 1
+      data.bytesUsed += size
 
   containerDeleteObject: (account, container, size) =>
     path = @containerPath(account, container)
 
-    @xattrIncrInt(path, 'objectCount', -1).then =>
-      @xattrIncrInt(path, 'bytesUsed', -size)
+    @updateMeta path, (data) ->
+      data.objectCount -= 1
+      data.bytesUsed -= size
 
   # objects
 
@@ -329,19 +293,19 @@ class FilesystemBackend
 
     q.nfcall(fs.open, path, 'w').then (fd) =>
       q.nfcall(fs.close, fd).then =>
-        q.all([
-          @xattrSetStr(path, 'object', obj)
-          @xattrSetStr(path, 'contentType', obj)
-          @xattrSetStr(path, 'hash', obj)
-          @xattrSetInt(path, 'contentLength', obj)
-          @setObjectLastModified(account, container, object, obj.lastModified)
-          @setObjectMetadata(account, container, object, obj.metadata)
-        ])
+        @setMeta path,
+          object: obj.object
+          contentType: obj.contentType
+          hash: obj.hash
+          contentLength: obj.contentLength
+          lastModified: obj.lastModified.getTime()
+          metadata: obj.metadata
 
   setObjectLastModified: (account, container, object, lastModified) =>
     path = @objectPath(account, container, object)
 
-    @xattrSetInt(path, 'lastModified', lastModified: lastModified.getTime())
+    @updateMeta path, (data) ->
+      data.lastModified = lastModified.getTime()
 
   deleteObject: (account, container, object) =>
     path = @objectPath(account, container, object)
@@ -357,24 +321,9 @@ class FilesystemBackend
       metadata: {}
 
     q.nfcall(fs.stat, path).then(=>
-      q.all([
-        @xattrGetStr(path, 'object', info)
-        @xattrGetStr(path, 'contentType', info)
-        @xattrGetStr(path, 'hash', info)
-        @xattrGetInt(path, 'contentLength', info)
-        @xattrGetInt(path, 'lastModified', info).then(-> info.lastModified = new Date(info.lastModified))
-        xattr.list(path).then((attrs) =>
-          mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-
-          promises = mattrs.map (attr) =>
-            xattr.get(path, attr).then (val) ->
-              key = attr.replace(/^user\.meta\./, '')
-              info.metadata[key] = val
-
-          q.all(promises)
-        )
-      ]).then =>
-        info
+      @getMeta(path).then (data) =>
+        data.lastModified = new Date(data.lastModified)
+        data
     , (err) =>
       null
     )
@@ -390,11 +339,7 @@ class FilesystemBackend
   setObjectMetadata: (account, container, object, metadata) =>
     path = @objectPath(account, container, object)
 
-    xattr.list(path).then((attrs) =>
-      mattrs = attrs.filter((attr) -> /^user\.meta\./.test(attr))
-      q.all(mattrs.map (attr) => xattr.remove(path, attr))
-    ).then(=>
-      q.all(_.keys(metadata).map((key) => xattr.set(path, 'user.meta.' + key, metadata[key])))
-    )
+    @updateMeta path, (data) ->
+      data.metadata = metadata
 
 module.exports = FilesystemBackend
