@@ -42,7 +42,6 @@
     "request": "~2.21.0"
   },
   "scripts": {
-    "pretest": "cake build",
     "prepublish": "cake build",
     "test": "cake test"
   }
