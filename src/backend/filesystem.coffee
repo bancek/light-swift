@@ -12,6 +12,22 @@ xattr =
   set: q.denodeify(xattrAsync.set)
   remove: q.denodeify(xattrAsync.remove)
 
+if process.env.DEBUG
+  calls = {}
+
+  track = (name, func) ->
+    inner = ->
+      calls[name] += 1
+      func.apply(func, arguments)
+
+  for name of xattr
+    calls[name] = 0
+    xattr[name] = track name, xattr[name]
+
+  setInterval ->
+    console.log calls
+  , 5000
+
 ensureDirs = (path) ->
   q.ninvoke(file, 'mkdirs', path, null).fail((e) ->
     throw e if e?.code != 'EEXIST'
