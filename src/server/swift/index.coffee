@@ -56,10 +56,13 @@ class SwiftServer
       result.fail (err) ->
         # e.g. throw res.send(404)
         if not err.statusCode?
-          # console.error(err)
-          process.nextTick ->
-            console.dir err
-            throw err
+          if process.env.DEBUG
+            process.nextTick ->
+              console.dir err
+              throw err
+          else
+            console.error(err)
+
           res.send 500
 
     app = express()
