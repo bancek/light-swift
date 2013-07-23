@@ -69,10 +69,10 @@ exports.extractAcl = (headers) ->
   acl
 
 exports.attachAcl = (acl, res) ->
-  if acl.read
+  if acl?.read
     res.set 'x-container-read', acl.read
 
-  if acl.write
+  if acl?.write
     res.set 'x-container-write', acl.write
 
 exports.formatObjects = (objects, prefix, delimiter, path, marker) ->
