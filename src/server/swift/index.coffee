@@ -232,8 +232,11 @@ class SwiftServer
             swift.getObjects(req.account, container).then (objects) ->
               res.set 'X-Object-Manifest', obj.objectManifest
 
-              segs = _.pairs(objects)
+              manifestLength = manifest.length
+
+              segs = _(objects).pairs()
                 .filter(([name, seg]) -> name.indexOf(manifest) == 0)
+                .sortBy(([name, seg]) -> name.slice(manifestLength))
                 .map(([name, seg]) -> seg)
 
               hashes = segs.map (x) -> x.hash
