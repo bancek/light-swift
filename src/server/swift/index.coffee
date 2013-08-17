@@ -62,6 +62,7 @@ class SwiftServer
               throw err
           else
             console.error(err)
+            console.error(err.stack)
 
           res.send 500
 
@@ -91,6 +92,7 @@ class SwiftServer
           res.send 401
       ).fail((err) ->
         console.error(err)
+        console.error(err.stack)
         res.send 500
       )
 
