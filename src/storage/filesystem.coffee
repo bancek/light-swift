@@ -12,13 +12,13 @@ class FilesystemStorage
   getPath: (object) ->
     path.join(@path, object)
 
-  get: (object) =>
+  get: (object, range) =>
     filename = @getPath(object)
 
     q.nfcall(fs.stat, filename).then ->
       defer = q.defer()
 
-      stream = fs.createReadStream(filename)
+      stream = fs.createReadStream(filename, range)
 
       stream.on 'open', ->
         defer.resolve(stream)

@@ -2,6 +2,7 @@ fs = require('fs')
 os = require('os')
 nodePath = require('path')
 rimraf = require('rimraf')
+q = require('q')
 should = require('chai').should()
 require('mocha-as-promised')()
 
@@ -54,6 +55,28 @@ FilesystemStorage = require('../src/storage/filesystem')
 
           consume(stream).then (content) ->
             content.should.equal '12345'
+
+    it 'should get object with range', ->
+      stream = dataStream('12345')
+
+      storage.create(stream).then (res) ->
+        object = res.object
+
+        range = (start, end, eq) ->
+          storage.get(object, start: start, end: end).then (stream) ->
+            consume(stream).then (content) ->
+              content.should.equal eq
+
+        q.all [
+          range(0, 0, '1')
+          range(1, 1, '2')
+          range(2, 2, '3')
+          range(3, 3, '4')
+          range(4, 4, '5')
+          range(0, 4, '12345')
+          range(1, 4, '2345')
+          range(1, 3, '234')
+        ]
 
     it 'should create and get empty object', ->
       stream = dataStream('')

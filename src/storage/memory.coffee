@@ -6,8 +6,11 @@ class MemoryStorage
   constructor: ->
     @objects = {}
 
-  get: (object) =>
+  get: (object, range) =>
     buffer = @objects[object]
+
+    if range?
+      buffer = buffer.slice(range.start, range.end + 1)
 
     if buffer?
       stream = new Duplex()
