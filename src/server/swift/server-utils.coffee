@@ -3,15 +3,16 @@ aclUtils = require('../../acl-utils')
 
 checkAcl = (getContainer, authAccount, method, referrer) ->
   getContainer().then (ci) ->
-    acl = if ci.acl?.read and method in ['GET', 'HEAD']
-      ci.acl.read
-    else if ci.acl?.write and method in ['PUT', 'POST', 'DELETE']
-      ci.acl.write
+    if ci?
+      acl = if ci.acl?.read and method in ['GET', 'HEAD']
+        ci.acl.read
+      else if ci.acl?.write and method in ['PUT', 'POST', 'DELETE']
+        ci.acl.write
 
-    if acl
-      [refs, groups] = aclUtils.parseAcl(acl)
+      if acl
+        [refs, groups] = aclUtils.parseAcl(acl)
 
-      return authAccount in groups or aclUtils.referrerAllowed(referrer, refs)
+        return authAccount in groups or aclUtils.referrerAllowed(referrer, refs)
 
 exports.authorize = (req, res, authAccount, getContainer) ->
   authAccount.then (authAccount) ->
