@@ -176,8 +176,8 @@ class LightSwift
           .then(@bumpAccount(account))
           .then(@bumpContainer(account, container))
 
-  objectStream: (obj) =>
-    @storage.get(obj.object)
+  objectStream: (obj, range) =>
+    @storage.get(obj.object, range)
 
   copyObject: (account, container, object, obj) =>
     @objectStream(obj).then (stream) =>

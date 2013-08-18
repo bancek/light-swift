@@ -1054,6 +1054,68 @@ describe 'Swift API', ->
                   res.headers['content-type'].should.equal 'image/png'
                   body.should.equal '456'
 
+    it 'should get range', (done) ->
+      createObjects([['parts/part1', '123'], ['parts/part3', '789'], ['parts/part2', '456']]).then ->
+        headers =
+          'x-object-manifest': 'test-container/parts'
+          'content-type': 'text/plain'
+
+        PUT('/test-container/all', body: '', headers: headers).then ([res, body]) ->
+          res.statusCode.should.equal 201
+
+          HEAD('/test-container/all').then ([res, body]) ->
+            res.headers['content-length'].should.equal '9'
+            res.headers['accept-ranges'].should.equal 'bytes'
+
+            checkRange = (range, status, content, headers) ->
+              GET('/test-container/all', headers: range: range).then ([res, body]) ->
+                res.statusCode.should.equal status
+
+                if content?
+                  body.should.equal content
+
+                for key, value of (headers or {})
+                  res.headers.should.have.property key
+                  res.headers[key].should.equal value
+
+            q.all [
+              checkRange('', 200, '123456789', 'content-length': '9')
+              checkRange('bytes=500-20', 416, null, 'content-range': 'bytes */9')
+              checkRange('malformed', 200, '123456789', 'content-length': '9')
+
+              checkRange('bytes=0-', 206, '123456789', 'content-length': '9', 'content-range': 'bytes 0-8/9')
+              checkRange('bytes=1-', 206, '23456789', 'content-length': '8', 'content-range': 'bytes 1-8/9')
+              checkRange('bytes=0-8', 206, '123456789', 'content-length': '9', 'content-range': 'bytes 0-8/9')
+              checkRange('bytes=1-8', 206, '23456789', 'content-length': '8', 'content-range': 'bytes 1-8/9')
+
+              checkRange('bytes=0-0', 206, '1', 'content-range': 'bytes 0-0/9')
+              checkRange('bytes=1-1', 206, '2', 'content-range': 'bytes 1-1/9')
+              checkRange('bytes=2-2', 206, '3', 'content-range': 'bytes 2-2/9')
+              checkRange('bytes=3-3', 206, '4', 'content-range': 'bytes 3-3/9')
+              checkRange('bytes=4-4', 206, '5', 'content-range': 'bytes 4-4/9')
+              checkRange('bytes=5-5', 206, '6', 'content-range': 'bytes 5-5/9')
+              checkRange('bytes=6-6', 206, '7', 'content-range': 'bytes 6-6/9')
+              checkRange('bytes=7-7', 206, '8', 'content-range': 'bytes 7-7/9')
+              checkRange('bytes=8-8', 206, '9', 'content-range': 'bytes 8-8/9')
+
+              checkRange('bytes=0-1', 206, '12')
+              checkRange('bytes=2-3', 206, '34')
+              checkRange('bytes=4-5', 206, '56')
+              checkRange('bytes=6-7', 206, '78')
+              checkRange('bytes=7-8', 206, '89')
+
+              checkRange('bytes=0-2', 206, '123')
+              checkRange('bytes=3-5', 206, '456')
+              checkRange('bytes=6-8', 206, '789')
+
+              checkRange('bytes=0-3', 206, '1234')
+              checkRange('bytes=1-4', 206, '2345')
+              checkRange('bytes=2-5', 206, '3456')
+              checkRange('bytes=3-6', 206, '4567')
+              checkRange('bytes=4-7', 206, '5678')
+              checkRange('bytes=5-8', 206, '6789')
+            ]
+
   describe 'ACL', ->
     setup()
     auth()

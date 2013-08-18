@@ -2,6 +2,7 @@ http = require('http')
 q = require('q')
 _ = require('lodash')
 express = require('express')
+parseRange = require('range-parser')
 
 {random32, Hasher} = require('../../utils')
 serverUtils = require('./server-utils')
@@ -25,7 +26,6 @@ class SwiftServer
         res.set 'Content-Type', 'text/plain; charset=utf-8'
         res.send list.map((x) -> x + '\n').join('')
 
-      # res.set 'Accept-Ranges', 'bytes'
       res.set 'X-Trans-Id', 'tx' + random32()
 
       res.timestamp = (date) ->
@@ -210,6 +210,7 @@ class SwiftServer
         if not obj?
           return res.send 404
 
+        res.set 'Accept-Ranges', 'bytes'
         res.set 'Content-Type', obj.contentType
         res.set 'Last-Modified', obj.lastModified.toUTCString()
         res.set 'Etag', obj.hash
@@ -253,22 +254,60 @@ class SwiftServer
             .map((x) -> x.contentLength)
             .reduce(((x, y) -> x + y), 0)
 
-          res.set 'Content-Length', contentLength
-
           if req.head
+            res.set 'Content-Length', contentLength
             return res.end()
+
+          range =
+            start: 0
+            end: contentLength - 1
+
+          if req.headers.range
+            parsedRange = parseRange(contentLength, req.headers.range)
+
+            if parsedRange == -1
+              res.set 'Content-Range', 'bytes */' + contentLength
+              return res.send(416)
+
+            if parsedRange != -2
+              range =
+                start: parsedRange[0].start
+                end: parsedRange[0].end
+
+              res.statusCode = 206
+              res.set 'Content-Range', "bytes #{range.start}-" +
+                "#{range.end}/#{contentLength}"
+
+          currentLength = range.end - range.start + 1
+
+          res.set 'Content-Length', currentLength
+
+          offset = 0
 
           next = ->
             segment = segments.shift()
 
             if segment?
-              swift.objectStream(segment).then (stream) ->
-                stream.pipe(res, end: no)
+              segmentLength = segment.contentLength
 
-                stream.on 'end', ->
-                  stream.unpipe(res)
+              if range.start <= (offset + segmentLength) and range.end >= offset
+                segmentRange =
+                  start: Math.max(range.start - offset, 0)
+                  end: Math.min(range.end - offset, segmentLength - 1)
 
-                  next()
+                swift.objectStream(segment, segmentRange).then (stream) ->
+                  stream.pipe(res, end: no)
+
+                  stream.on 'end', ->
+                    stream.unpipe(res)
+
+                    offset += segmentLength
+
+                    next()
+              else
+                offset += segmentLength
+
+                next()
             else
               res.end()
 
