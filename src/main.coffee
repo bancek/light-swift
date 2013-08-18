@@ -97,5 +97,7 @@ swift.connect()
     swift.addContainer(argv.account, argv.container) if argv.container
   )
   .then(-> swift.server())
-  .then(-> console.log("Light Swift server started on 0.0.0.0:#{options.port} using #{argv.backend} backend and #{argv.storage} storage"))
+  .then(-> console.log("Light Swift server started on " +
+    "0.0.0.0:#{options.port} using #{argv.backend} backend " +
+    "and #{argv.storage} storage"))
   .fail((err) -> console.error(err))
