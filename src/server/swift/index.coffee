@@ -159,9 +159,18 @@ class SwiftServer
           prefix = req.param('prefix')
           delimiter = req.param('delimiter')
           path = req.param('path')
-          marker = req.param('marker')
 
-          objsMeta = serverUtils.formatObjects(objects, prefix, delimiter, path, marker)
+          marker = req.param('marker')
+          marker = null if not marker
+
+          endMarker = req.param('end_marker')
+          endMarker = null if not endMarker
+
+          limit = req.param('limit')
+          limit = if limit then Number(limit) else null
+          limit = null if limit? and (isNaN(limit) or limit < 0)
+
+          objsMeta = serverUtils.formatObjects(objects, prefix, delimiter, path, marker, endMarker, limit)
 
           if req.json
             res.json objsMeta

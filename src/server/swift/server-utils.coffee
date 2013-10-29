@@ -76,7 +76,10 @@ exports.attachAcl = (acl, res) ->
   if acl?.write
     res.set 'x-container-write', acl.write
 
-exports.formatObjects = (objects, prefix, delimiter, path, marker) ->
+exports.formatObjects = (objects, prefix, delimiter, path, marker, endMarker, limit) ->
+  # default limit for Swift is 10000
+  limit = 10000 if not limit?
+
   objs = _.keys objects
 
   pathMode = no
@@ -122,8 +125,21 @@ exports.formatObjects = (objects, prefix, delimiter, path, marker) ->
   if pathMode
     objsMeta = objsMeta.filter (x) -> not x.subdir?
 
+  objNameGetter = (x) -> x? and (x.name ? x.subdir)
+
+  objsMeta = _.sortBy(objsMeta, objNameGetter)
+
   if marker?
-    objsMeta = []
+    indexObjects = [{name: ''}].concat(objsMeta)
+    index = _.sortedIndex(indexObjects, {name: marker}, objNameGetter)
+    index-- if marker < objNameGetter(indexObjects[index])
+    objsMeta.splice(0, index)
+
+  if endMarker?
+    endIndex = _.sortedIndex(objsMeta, {name: endMarker}, objNameGetter)
+    objsMeta.splice(endIndex)
+
+  objsMeta.splice(limit)
 
   objsMeta
 

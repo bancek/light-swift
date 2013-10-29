@@ -435,6 +435,53 @@ describe 'Swift API', ->
             res.headers['x-container-bytes-used'].should.equal '6'
             body.split('\n').should.have.els ['file1', 'file2', '']
 
+    it 'should get objects sorted', (done) ->
+      q.all([
+        PUT('/test-container/file1', body: 'x')
+        PUT('/test-container/file3', body: 'x')
+        PUT('/test-container/file2', body: 'x')
+      ]).then ->
+        GET('/test-container?limit=2').then ([res, body]) ->
+          res.statusCode.should.equal 200
+          body.trim().split('\n').should.eql ['file1', 'file2', 'file3']
+
+    it 'should get objects with limit and marker', (done) ->
+      q.all([
+        PUT('/test-container/file10', body: 'x')
+        PUT('/test-container/file20', body: 'x')
+        PUT('/test-container/file30', body: 'x')
+        PUT('/test-container/file40', body: 'x')
+        PUT('/test-container/file50', body: 'x')
+      ]).then ->
+        check = (limit, marker, endMarker, eql) ->
+          GET("/test-container?limit=#{limit}&marker=#{marker}&end_marker=#{endMarker}").then ([res, body]) ->
+            body.split('\n').filter((x) -> x).should.eql eql
+
+        q.all([
+          check(2, '', '', ['file10', 'file20'])
+          check(5, '', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(10, '', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(-1, '', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check('invalid', '', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(null, 'file00', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(null, 'file09', '', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(null, 'file10', '', ['file20', 'file30', 'file40', 'file50'])
+          check(null, 'file15', '', ['file20', 'file30', 'file40', 'file50'])
+          check(null, 'file20', '', ['file30', 'file40', 'file50'])
+          check(null, 'file49', '', ['file50'])
+          check(null, 'file50', '', [])
+          check(null, 'file51', '', [])
+          check(null, '', 'file00', [])
+          check(null, '', 'file10', [])
+          check(null, '', 'file20', ['file10'])
+          check(null, '', 'file30', ['file10', 'file20'])
+          check(null, '', 'file40', ['file10', 'file20', 'file30'])
+          check(null, '', 'file50', ['file10', 'file20', 'file30', 'file40'])
+          check(null, '', 'file51', ['file10', 'file20', 'file30', 'file40', 'file50'])
+          check(null, 'file10', 'file50', ['file20', 'file30', 'file40'])
+          check(2, 'file10', 'file50', ['file20', 'file30'])
+        ])
+
     it 'should get empty objects (JSON)', (done) ->
       GET('/test-container', json: yes).then ([res, body]) ->
         res.statusCode.should.equal 200
@@ -467,11 +514,6 @@ describe 'Swift API', ->
             'dirX/f1'
             'another'
           ]
-
-    it 'should get objects with position marker', (done) ->
-      createSampleObjects().then ->
-        GET('/test-container?marker=dirX', json: yes).then ([res, body]) ->
-          body.length.should.equal 0
 
     it 'should get objects with empty prefix', (done) ->
       createSampleObjects().then ->
