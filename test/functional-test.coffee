@@ -62,11 +62,11 @@ describe 'Swift API', ->
       swift = null
 
       beforeEach (done) ->
-        authUrl = 'http://localhost:8080/auth/v1.0'
+        authUrl = 'http://localhost:2255/auth/v1.0'
         swiftUser = 'test:tester'
         swiftKey = 'testing'
 
-        swift = new LightSwift(port: 8080)
+        swift = new LightSwift(port: 2255)
 
         swift.connect()
           .then(-> swift.addAccount('test'))
