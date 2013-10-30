@@ -435,7 +435,7 @@ describe 'Swift API', ->
             res.headers['x-container-bytes-used'].should.equal '6'
             body.split('\n').should.have.els ['file1', 'file2', '']
 
-    it 'should get objects sorted', (done) ->
+    it 'should get objects sorted with limit', (done) ->
       q.all([
         PUT('/test-container/file1', body: 'x')
         PUT('/test-container/file3', body: 'x')
@@ -443,7 +443,7 @@ describe 'Swift API', ->
       ]).then ->
         GET('/test-container?limit=2').then ([res, body]) ->
           res.statusCode.should.equal 200
-          body.trim().split('\n').should.eql ['file1', 'file2', 'file3']
+          body.trim().split('\n').should.eql ['file1', 'file2']
 
     it 'should get objects with limit and marker', (done) ->
       q.all([
