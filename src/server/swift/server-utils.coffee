@@ -92,9 +92,7 @@ exports.formatObjects = (objects, prefix, delimiter, path, marker, endMarker, li
     pathMode = yes
 
   if prefix
-    prefixRegex = new RegExp('^' + prefix)
-
-    objs = _.filter objs, (obj) -> prefixRegex.test(obj)
+    objs = _.filter objs, (obj) -> obj.indexOf(prefix) == 0
 
   if delimiter
     pfx = prefix or ''
