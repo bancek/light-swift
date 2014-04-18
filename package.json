@@ -23,7 +23,7 @@
     "node": "*"
   },
   "dependencies": {
-    "express": "*",
+    "express": "<4",
     "lodash": "*",
     "optimist": "*",
     "mime": "*",
