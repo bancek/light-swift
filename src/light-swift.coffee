@@ -33,14 +33,17 @@ class LightSwift
   # accounts
 
   addAccount: (account) =>
-    accountInfo =
-      bytesUsed: 0
-      containerCount: 0
-      objectCount: 0
-      metadata: {}
-      lastModified: new Date()
+    @backend.getAccount(account).then (existing) =>
+      return if existing?
 
-    @backend.addAccount(account, accountInfo)
+      accountInfo =
+        bytesUsed: 0
+        containerCount: 0
+        objectCount: 0
+        metadata: {}
+        lastModified: new Date()
+
+      @backend.addAccount(account, accountInfo)
 
   bumpAccount: (account) =>
     @backend.setAccountLastModified(account, new Date())
@@ -59,7 +62,11 @@ class LightSwift
 
   addUser: (account, username, key) =>
     # TODO: use bcrypt
-    @backend.addUser(account, username, key)
+
+    @backend.getUser(account, username).then (existing) =>
+      return if existing?
+
+      @backend.addUser(account, username, key)
 
   newAuthToken: (account) =>
     authToken = 'AUTH_tk' + random32()
@@ -75,7 +82,7 @@ class LightSwift
 
     [account, username] = parts
 
-    @backend.getUser(account, username).then (user) ->
+    @backend.getUser(account, username).then (user) =>
       authenticated = user?.key == key
 
       authenticated
@@ -95,9 +102,12 @@ class LightSwift
       acl: acl
       lastModified: new Date()
 
-    @backend.addContainer(account, container, containerInfo).then =>
-      @backend.accountAddContainer(account)
-        .then @bumpAccount(account)
+    @backend.getContainer(account, container).then (existing) =>
+      return if existing?
+
+      @backend.addContainer(account, container, containerInfo).then =>
+        @backend.accountAddContainer(account)
+          .then @bumpAccount(account)
 
   canDeleteContainer: (containerInfo) =>
     containerInfo.objectCount == 0

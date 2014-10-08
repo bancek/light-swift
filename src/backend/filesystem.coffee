@@ -44,9 +44,11 @@ class FilesystemBackend
 
   connect: =>
     ensureDirs(@basePath).then =>
-      ensureDirs(nodePath.join(@basePath, 'data')).then =>
-        ensureDirs(nodePath.join(@basePath, 'auth')).then =>
-          ensureDirs(nodePath.join(@basePath, 'authtokens'))
+      q.all [
+        ensureDirs(nodePath.join(@basePath, 'data'))
+        ensureDirs(nodePath.join(@basePath, 'auth'))
+        ensureDirs(nodePath.join(@basePath, 'authtokens'))
+      ]
 
   close: =>
     q()
@@ -122,9 +124,12 @@ class FilesystemBackend
   getAccount: (account) =>
     path = @accountPath(account)
 
-    @getMeta(path).then (data) =>
+    @getMeta(path).then((data) =>
       data.lastModified = new Date(data.lastModified)
       data
+    , (err) =>
+      null
+    )
 
   setAccountMetadata: (account, metadata) =>
     path = @accountPath(account)
