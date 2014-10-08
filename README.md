@@ -8,29 +8,36 @@
 
 ## Quick Start
 
-The quickest way to get started with light-swift is to utilize the executable `light-swift` to run the sample application.
+The quickest way to get started with light-swift is to utilize the executable `light-swift` to run the sample application using memory backend.
 
-    $ npm install -g light-swift
     $ light-swift
 
-Usage help:
+### MongoDB backend
 
-    $ light-swift --help
+    $ light-swift -a account -u username -k password -b mongo -t '["mongodb://localhost/lightswift"]' -s filesystem -o '["/tmp/lightswiftstorage"]'
 
-## Test coverage
+### MySQL backend
 
-    $ coffeeCoverage src lib # in light-swift
-    $ mocha --compilers coffee:coffee-script --ignore-leaks --reporter html-cov > coverage.html # in swift-client
+    $ echo 'CREATE DATABASE `lightswift` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;' | mysql -u root
+    $ light-swift -a account -u username -k password -b mysql -t '["mysql://root:@localhost/lightswift"]' -s filesystem -o '["/tmp/lightswiftstorage"]'
 
-## Ensure MongoDB indices
+### Filesystem backend
 
-```
-db.users.ensureIndex({"_id.a": 1, "_id.u": 1})
-db.containers.ensureIndex({"_id.a": 1})
-db.containers.ensureIndex({"_id.a": 1, "_id.c": 1})
-db.objects.ensureIndex({"_id.a": 1, "_id.c": 1})
-db.objects.ensureIndex({"_id.a": 1, "_id.c": 1, "_id.o": 1})
-```
+    $ light-swift -a account -u username -k password -b filesystem -t '["/tmp/lightswiftbackend"]' -s filesystem -o '["/tmp/lightswiftstorage"]'
+
+## Development
+
+    $ npm install
+
+### Run tests
+
+    $ MONGO_URL=mongodb://localhost/lightswifttest MYSQL_HOST=localhost MYSQL_USERNAME=root MYSQL_PASSWORD= MYSQL_DATABASE=lightswifttest cake test
+
+### Coverage
+
+    $ MONGO_URL=mongodb://localhost/lightswifttest MYSQL_HOST=localhost MYSQL_USERNAME=root MYSQL_PASSWORD= MYSQL_DATABASE=lightswifttest cake coverage
+
+Open `coverage.html`
 
 ## Authors
 
