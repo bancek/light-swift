@@ -4,10 +4,10 @@ path = require 'path'
 file = require 'file'
 
 task 'build', 'Build lib from src', ->
-  spawn('coffee', ['--compile', '--output', 'lib/', 'src/'], stdio: 'inherit')
+  spawn 'coffee', ['--compile', '--output', 'lib/', 'src/'], stdio: 'inherit', env: process.env
 
 task 'coverage', 'Build cov-lib from src', (callback) ->
-  spawn('coffeeCoverage', ['src', 'src'], stdio: 'inherit').on 'close', ->
+  spawn('coffeeCoverage', ['src', 'src'], stdio: 'inherit', env: process.env).on 'close', ->
     out = fs.openSync('coverage.html', 'w')
 
     spawn('mocha', [
@@ -26,4 +26,4 @@ task 'coverage', 'Build cov-lib from src', (callback) ->
       callback?()
 
 task 'test', 'Run Mocha tests', (callback) ->
-  spawn 'mocha', ['--compilers', 'coffee:coffee-script', '--recursive', 'test'], stdio: 'inherit'
+  spawn 'mocha', ['--compilers', 'coffee:coffee-script', '--recursive', 'test'], stdio: 'inherit', env: process.env
