@@ -8,9 +8,11 @@ require('mocha-as-promised')()
 rimraf = require('rimraf')
 
 mongodb = require('mongodb')
+mysql = require('mysql')
 
 MemoryBackend = require('../src/backend/memory')
 MongoBackend = require('../src/backend/mongo')
+MysqlBackend = require('../src/backend/mysql')
 FilesystemBackend = require('../src/backend/filesystem')
 
 [
@@ -35,6 +37,37 @@ FilesystemBackend = require('../src/backend/filesystem')
 
     cleanup().then ->
       backend = new MongoBackend(url)
+
+      backend.connect().then ->
+        [backend, (-> backend.close().then(cleanup))]
+  )]
+
+  ['MysqlBackend', (->
+    username = process.env.MYSQL_USERNAME
+    username = 'lightswift' if not username?
+
+    password = process.env.MYSQL_PASSWORD
+    password = 'lightswift' if not password?
+
+    host = process.env.MYSQL_HOST
+    host = 'localhost' if not host?
+
+    database = process.env.MYSQL_DATABASE
+    database = 'lightswifttest' if not database?
+
+    url = "mysql://#{username}:#{password}@#{host}/#{database}?charset=utf8"
+    urlNoDb = "mysql://#{username}:#{password}@#{host}/?charset=utf8"
+
+    cleanup = ->
+      conn = mysql.createConnection(urlNoDb)
+
+      q.ninvoke(conn, 'connect').then ->
+        q.ninvoke(conn, 'query', "DROP DATABASE `#{database}`").then((->), (->)).then ->
+          q.ninvoke(conn, 'query', "CREATE DATABASE `#{database}` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;").then ->
+            conn.end()
+
+    cleanup().then ->
+      backend = new MysqlBackend(url)
 
       backend.connect().then ->
         [backend, (-> backend.close().then(cleanup))]
