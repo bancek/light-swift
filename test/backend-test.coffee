@@ -273,7 +273,7 @@ FilesystemBackend = require('../src/backend/filesystem')
       it 'should addObject', ->
         backend.addObject(account, container, object, _.cloneDeep(objectInfo)).then ->
           backend.getObject(account, container, object).then (o) ->
-           o.should.eql objectInfo
+            o.should.eql objectInfo
 
       it 'should setObjectLastModified', ->
         date = new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))
