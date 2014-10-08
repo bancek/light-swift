@@ -100,4 +100,7 @@ swift.connect()
   .then(-> console.log("Light Swift server started on " +
     "0.0.0.0:#{options.port} using #{argv.backend} backend " +
     "and #{argv.storage} storage"))
-  .fail((err) -> console.error(err))
+  .fail((err) ->
+    console.error(err)
+    console.error(err.stack)
+  )
