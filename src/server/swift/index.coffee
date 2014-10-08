@@ -68,9 +68,8 @@ class SwiftServer
 
     app = express()
 
-    app.configure ->
-      app.disable('x-powered-by')
-      app.use(app.router)
+    app.disable('x-powered-by')
+    app.use(app.router)
 
     app.get '/auth/v1.0*', (req, res) ->
       user = req.get('x-auth-user')
