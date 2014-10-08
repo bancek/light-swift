@@ -15,8 +15,10 @@ FilesystemBackend = require('../src/backend/filesystem')
 
 [
   ['MemoryBackend', (-> q([new MemoryBackend(), (-> q())]))]
+
   ['MongoBackend', (->
-    url = 'mongodb://localhost/lightswifttest'
+    url = process.env.MONGO_URL
+    url = 'mongodb://localhost/lightswifttest' if not url?
 
     cleanup = ->
       q.ninvoke(mongodb, 'connect', url).then (db) ->
@@ -37,6 +39,7 @@ FilesystemBackend = require('../src/backend/filesystem')
       backend.connect().then ->
         [backend, (-> backend.close().then(cleanup))]
   )]
+
   ['FilesystemBackend', (->
     path = nodePath.join(os.tmpDir(), 'FilesystemBackend/')
 

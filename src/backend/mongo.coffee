@@ -8,19 +8,21 @@ class MongoBackend
 
   connect: =>
     collections = [
-      'accounts',
-      'users',
-      'authTokens',
-      'containers',
-      'objects'
+      ['accounts', []]
+      ['users', [{"_id.a": 1, "_id.u": 1}]]
+      ['authTokens', []]
+      ['containers', [{"_id.a": 1}, {"_id.a": 1, "_id.c": 1}]]
+      ['objects', [{"_id.a": 1, "_id.c": 1}, {"_id.a": 1, "_id.c": 1, "_id.o": 1}]]
     ]
 
     q.ninvoke(mongodb, 'connect', @databaseUrl).then (db) =>
       @db = db
 
-      allCollections = collections.map (name) =>
+      allCollections = collections.map ([name, indices]) =>
         q.ninvoke(db, 'collection', name).then (col) =>
           @[name] = col
+
+          q.all(indices.map (index) -> q.ninvoke(col, 'ensureIndex', index))
 
       q.all(allCollections)
 
