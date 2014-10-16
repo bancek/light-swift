@@ -301,6 +301,7 @@ class FilesystemBackend
         @setMeta path,
           object: obj.object
           contentType: obj.contentType
+          objectManifest: obj.objectManifest
           hash: obj.hash
           contentLength: obj.contentLength
           lastModified: obj.lastModified.getTime()

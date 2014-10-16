@@ -128,6 +128,7 @@ FilesystemBackend = require('../src/backend/filesystem')
     objectInfo =
       object: 'OBJID'
       metadata: {}
+      objectManifest: 'test-container/objects'
       contentType: 'text/plain'
       contentLength: 1024
       lastModified: new Date(Date.parse('Mon May 27 2013 16:48:48 GMT+0200 (CEST)'))

@@ -71,6 +71,7 @@ class MysqlBackend
       `container` varchar(255) NOT NULL,
       `object` varchar(255) NOT NULL,
       `backend_object` varchar(255) NOT NULL,
+      `object_manifest` varchar(255) NOT NULL,
       `content_type` varchar(255) NOT NULL,
       `hash` varchar(255) NOT NULL,
       `content_length` BIGINT unsigned NOT NULL,
@@ -431,17 +432,19 @@ class MysqlBackend
         `container`,
         `object`,
         `backend_object`,
+        `object_manifest`,
         `content_type`,
         `hash`,
         `content_length`,
         `last_modified`,
         `metadata`
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', [
       account
       container
       object
       obj.object
+      obj.objectManifest
       obj.contentType
       obj.hash
       obj.contentLength
@@ -480,6 +483,7 @@ class MysqlBackend
 
   _rowToObject: (row) =>
     object: row.backend_object
+    objectManifest: row.object_manifest
     contentType: row.content_type
     hash: row.hash
     contentLength: row.content_length
@@ -490,6 +494,7 @@ class MysqlBackend
     q.ninvoke(@pool, 'query', '''
       SELECT
         `backend_object`,
+        `object_manifest`,
         `content_type`,
         `hash`,
         `content_length`,
@@ -515,6 +520,7 @@ class MysqlBackend
       SELECT
         `object`,
         `backend_object`,
+        `object_manifest`,
         `content_type`,
         `hash`,
         `content_length`,
