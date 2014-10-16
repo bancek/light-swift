@@ -71,7 +71,7 @@ class MysqlBackend
       `container` varchar(255) NOT NULL,
       `object` varchar(255) NOT NULL,
       `backend_object` varchar(255) NOT NULL,
-      `object_manifest` varchar(255) NOT NULL,
+      `object_manifest` varchar(255),
       `content_type` varchar(255) NOT NULL,
       `hash` varchar(255) NOT NULL,
       `content_length` BIGINT unsigned NOT NULL,
