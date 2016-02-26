@@ -72,8 +72,8 @@ class SwiftServer
     app.use(app.router)
 
     app.get '/auth/v1.0*', (req, res) ->
-      user = req.get('x-auth-user')
-      key = req.get('x-auth-key')
+      user = req.get('x-auth-user') or req.get('x-storage-user')
+      key = req.get('x-auth-key') or req.get('x-storage-pass')
 
       swift.authenticate(user, key).then((authenticated) ->
         if authenticated
