@@ -222,6 +222,7 @@ class LightSwift
   server: =>
     @_server = new SwiftServer(@)
     @_server.listen()
+    @options.port = @_server.httpServer.address().port;
     @_server
 
 module.exports = LightSwift
